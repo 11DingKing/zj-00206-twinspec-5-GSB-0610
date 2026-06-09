@@ -1,0 +1,7 @@
+node_modules/
+dist/
+build/
+coverage/
+*.db
+*.db-journal
+prisma/migrations/

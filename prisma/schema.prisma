@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Vehicle {
+  id            Int       @id @default(autoincrement())
+  modelName     String
+  modelSeries   String?
+  brand         String
+  year          Int
+  powerType     String
+  vehicleClass  String
+  platform      String
+  trimLevel     String
+  curbWeight    Int
+  lengthMm      Int
+  widthMm       Int
+  heightMm      Int
+  wheelbaseMm   Int
+  batteryKwh    Int?
+  featureCount  Int?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  icePairs      VehiclePair[] @relation("IceVehicle")
+  evPairs       VehiclePair[] @relation("EvVehicle")
+  phevPairs     VehiclePair[] @relation("PhevVehicle")
+  chainItems    ChainComparisonItem[]
+}
+
+model VehiclePair {
+  id                     Int       @id @default(autoincrement())
+  modelName              String
+  brand                  String
+  platform               String
+  vehicleClass           String
+  pairType               String    @default("ICE_EV")
+  status                 String    @default("PENDING")
+  matchScore             Int?
+  iceVehicleId           Int?
+  phevVehicleId          Int?
+  evVehicleId            Int?
+  iceVehicle             Vehicle?  @relation("IceVehicle", fields: [iceVehicleId], references: [id])
+  phevVehicle            Vehicle?  @relation("PhevVehicle", fields: [phevVehicleId], references: [id])
+  evVehicle              Vehicle?  @relation("EvVehicle", fields: [evVehicleId], references: [id])
+  weightDiffKg           Int?
+  weightGainPct          Float?
+  normalizedDiff         Float?
+  sizeDiffMm             Int?
+  batteryContributionKg  Float?
+  sizeContributionKg     Float?
+  featureContributionKg  Float?
+  primaryCause           String?
+  causeTags              String?
+  notes                  String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@unique([iceVehicleId, evVehicleId])
+}
+
+model ChainComparison {
+  id            Int       @id @default(autoincrement())
+  modelSeries   String
+  brand         String
+  platform      String
+  vehicleClass  String
+  status        String    @default("ACTIVE")
+  items         ChainComparisonItem[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model ChainComparisonItem {
+  id                 Int       @id @default(autoincrement())
+  chainComparisonId  Int
+  vehicleId          Int
+  powerType          String
+  curbWeight         Int
+  weightFromPrevious Int?
+  weightFromBase     Int?
+  batteryKwh         Int?
+  sequence           Int
+  vehicle            Vehicle   @relation(fields: [vehicleId], references: [id])
+  chainComparison    ChainComparison @relation(fields: [chainComparisonId], references: [id])
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([chainComparisonId, vehicleId])
+}
