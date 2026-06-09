@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# 同一分支/PR 触发新 run 时取消旧 run，节省资源
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify (typecheck / lint / format / build)
+    runs-on: ubuntu-latest
+
+    env:
+      # 关掉 husky 的 prepare 钩子，避免在 CI 里安装 git hooks
+      HUSKY: "0"
+      # 显式声明 CI 环境（多数工具会据此调整行为）
+      CI: "true"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (npm ci)
+        # --ignore-scripts 进一步阻止 prepare/postinstall 等脚本（含 husky）运行
+        run: npm ci --ignore-scripts
+
+      - name: Generate Prisma Client
+        # tsc 需要 @prisma/client 的生成产物，否则 typecheck/build 会报类型错误
+        run: npx prisma generate
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint (read-only, no --fix)
+        # 直接调用 eslint，绕开 package.json 中带 --fix 的 lint 脚本，确保 CI 只做校验
+        run: npx --no-install eslint "src/**/*.ts" "prisma/seed.ts" --max-warnings=0
+
+      - name: Format check (read-only)
+        run: npm run format:check
+
+      - name: Build
+        run: npm run build
