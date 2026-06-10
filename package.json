@@ -13,6 +13,7 @@
     "setup": "npm install && npm run build && npm run db:init",
     "init": "npm run build && npm run db:init",
     "lint": "eslint \"src/**/*.ts\" \"prisma/seed.ts\" --fix",
+    "lint:check": "eslint \"src/**/*.ts\" \"prisma/seed.ts\"",
     "format": "prettier --write \"src/**/*.ts\" \"prisma/seed.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"prisma/seed.ts\"",
     "typecheck": "tsc --noEmit",
